@@ -1,0 +1,92 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Отправка сообщения{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">Обратная связь</h4>
+            </div>
+            <div class="card-body">
+                <!-- Блок для вывода сообщений об успехе/ошибке через Ajax -->
+                <div id="ajax-messages"></div>
+
+                <!-- Обычная форма. action указывает на ajax-вью, но мы перехватим её JS -->
+                <form id="message-form" method="post" action="{% url 'core:message_ajax' %}" novalidate>
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            <!-- Блок для вывода ошибок конкретного поля (заполняется через Ajax) -->
+                            <div class="text-danger small mt-1" id="error-{{ field.name }}"></div>
+                        </div>
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-info text-white w-100" id="submit-btn">Отправить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('message-form');
+    const messagesDiv = document.getElementById('ajax-messages');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Отменяем стандартную отправку (перезагрузку страницы)
+        
+        // Очищаем предыдущие ошибки и сообщения
+        messagesDiv.innerHTML = '';
+        document.querySelectorAll('.text-danger').forEach(el => el.innerHTML = '');
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Отправка...';
+
+        // Собираем данные формы (включая CSRF-токен)
+        const formData = new FormData(form);
+
+        // Отправляем запрос через fetch (Ajax)
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' // Указываем, что это Ajax
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                // Успех
+                messagesDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                form.reset(); // Очищаем форму
+            } else {
+                // Ошибки валидации
+                messagesDiv.innerHTML = `<div class="alert alert-danger">Пожалуйста, исправьте ошибки в форме.</div>`;
+                for (const [field, errors] of Object.entries(data.errors)) {
+                    const errorDiv = document.getElementById(`error-${field}`);
+                    if (errorDiv) {
+                        errorDiv.innerText = errors.join(' ');
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            messagesDiv.innerHTML = `<div class="alert alert-danger">Произошла ошибка при отправке. Попробуйте позже.</div>`;
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Отправить';
+        });
+    });
+});
+</script>
+{% endblock %}

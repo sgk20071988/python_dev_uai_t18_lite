@@ -4,6 +4,7 @@ from django.contrib import messages as flash
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from .forms import RegisterForm, LoginForm, MessageForm
+from django.contrib.auth.decorators import login_required
 
 
 def register_view(request):
@@ -85,7 +86,7 @@ def message_ajax_view(request):
 
     return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
 
-
+@login_required
 def profile_view(request):
     """Профиль пользователя: данные + его сообщения."""
     if not request.user.is_authenticated:
