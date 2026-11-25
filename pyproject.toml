@@ -1,0 +1,19 @@
+[project]
+name = "python-dev-uai-t18-lite"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Egor Sakirko", email = "sgk1988@yandex.ru" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.1.3",
+]
+
+[project.scripts]
+python-dev-uai-t18-lite = "python_dev_uai_t18_lite:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
